@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -227,7 +228,7 @@ fun ValueBasedAnimation1Screen() {
                             .rotate(iconRotation)
                     ) {
                         Icon(
-                            imageVector = if (selected) Icons.Filled.Check else Icons.Filled.Add,
+                            imageVector = if (selected) Icons.Filled.ArrowDropDown else Icons.Filled.Add,
                             contentDescription = if (selected) "Collapse" else "Expand",
                             tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                         )
