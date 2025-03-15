@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
@@ -29,22 +28,26 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlin.math.sin
 import kotlinx.coroutines.delay
+import kotlin.math.sin
 import kotlinx.coroutines.launch
 
+// Enable experimental animation APIs
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun AnimatedContentScreen() {
+    // Coroutine scope for managing animations
     val scope = rememberCoroutineScope()
+
+    // State management for different UI states
     var currentState by remember { mutableStateOf(AnimationState.COUNT) }
     var count by remember { mutableIntStateOf(0) }
     var expanded by remember { mutableStateOf(false) }
 
-    // For rotating background animation
+    // Animatable for continuous background rotation
     val rotation = remember { Animatable(0f) }
 
-    // Background animation
+    // Background rotation animation (infinite loop)
     LaunchedEffect(key1 = Unit) {
         rotation.animateTo(
             targetValue = 360f,
@@ -55,6 +58,7 @@ fun AnimatedContentScreen() {
         )
     }
 
+    // Main container with gradient background
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -69,15 +73,17 @@ fun AnimatedContentScreen() {
                 )
             )
     ) {
-        // Rotating background elements
+        // Rotating background elements container
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
-                    rotationZ = rotation.value
+                    rotationZ = rotation.value  // Apply continuous rotation
                 }
         ) {
+            // Create 5 animated floating elements
             repeat(5) { index ->
+                // Vertical movement animation for each element
                 val animatedOffset = remember { Animatable(0f) }
                 LaunchedEffect(key1 = Unit) {
                     animatedOffset.animateTo(
@@ -89,6 +95,7 @@ fun AnimatedContentScreen() {
                     )
                 }
 
+                // Individual floating element
                 Box(
                     modifier = Modifier
                         .size(100.dp + (index * 30).dp)
@@ -98,7 +105,7 @@ fun AnimatedContentScreen() {
                         )
                         .scale(0.5f + (animatedOffset.value * 0.5f))
                         .graphicsLayer {
-                            alpha = 0.15f
+                            alpha = 0.15f  // Semi-transparent effect
                         }
                         .background(
                             Color.White.copy(alpha = 0.2f),
@@ -109,6 +116,7 @@ fun AnimatedContentScreen() {
             }
         }
 
+        // Main content column
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -118,6 +126,7 @@ fun AnimatedContentScreen() {
         ) {
             Spacer(modifier = Modifier.height(32.dp))
 
+            // Animated title text
             Text(
                 text = "Animation Showcase",
                 fontSize = 28.sp,
@@ -126,41 +135,46 @@ fun AnimatedContentScreen() {
                 modifier = Modifier
                     .padding(bottom = 24.dp)
                     .graphicsLayer {
+                        // Create subtle pulsing effect using rotation value
                         val scale = 1f + (sin(rotation.value * 0.05f) * 0.05f)
                         scaleX = scale
                         scaleY = scale
                     }
             )
 
-            // Animated tab selector
+            // State selection controls
             AnimatedTabSelector(
                 currentState = currentState,
                 onStateChanged = { currentState = it }
             )
-
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Main content with advanced transition
+            // Main animated content area with custom transitions
             AnimatedContent(
                 targetState = currentState,
                 transitionSpec = {
+                    // Custom transition logic based on state changes
                     when (targetState) {
                         AnimationState.COUNT -> {
+                            // Slide from right to left with fade
                             (slideIn(initialOffset = { IntOffset(it.width, 0) }) + fadeIn()) with
                                     (slideOut(targetOffset = { IntOffset(-it.width, 0) }) + fadeOut())
                         }
                         AnimationState.EXPAND -> {
+                            // Slide from bottom to top with fade
                             (slideIn(initialOffset = { IntOffset(0, it.height) }) + fadeIn()) with
                                     (slideOut(targetOffset = { IntOffset(0, -it.height) }) + fadeOut())
                         }
                         else -> {
+                            // Scale and fade transition
                             (scaleIn(initialScale = 0.8f) + fadeIn()) with
                                     (scaleOut(targetScale = 1.2f) + fadeOut())
                         }
-                    }.using(SizeTransform(clip = false))
+                    }.using(SizeTransform(clip = false))  // Prevent clipping during animation
                 },
                 label = "main content"
             ) { targetState ->
+                // Container card for content
                 Card(
                     colors = CardDefaults.cardColors(
                         containerColor = Color(0xFF1D1E33).copy(alpha = 0.85f)
@@ -173,6 +187,7 @@ fun AnimatedContentScreen() {
                         .fillMaxHeight(0.6f)
                         .padding(16.dp)
                 ) {
+                    // Content based on current state
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -182,16 +197,8 @@ fun AnimatedContentScreen() {
                         when (targetState) {
                             AnimationState.COUNT -> EnhancedCountAnimation(
                                 count = count,
-                                onIncrement = {
-                                    scope.launch {
-                                        count++
-                                    }
-                                },
-                                onDecrement = {
-                                    scope.launch {
-                                        if (count > 0) count--
-                                    }
-                                }
+                                onIncrement = { scope.launch { count++ } },
+                                onDecrement = { scope.launch { if (count > 0) count-- } }
                             )
                             AnimationState.EXPAND -> EnhancedExpandAnimation(expanded) { expanded = !expanded }
                             AnimationState.CROSSFADE -> EnhancedCrossfadeAnimation()
@@ -203,251 +210,81 @@ fun AnimatedContentScreen() {
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
-@Composable
-fun AnimatedTabSelector(
-    currentState: AnimationState,
-    onStateChanged: (AnimationState) -> Unit
-) {
-    val options = AnimationState.values()
 
-    Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF1D1E33).copy(alpha = 0.7f)
-        ),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
-        elevation = CardDefaults.cardElevation(4.dp)
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(8.dp)
-                .fillMaxWidth(0.9f),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            options.forEach { state ->
-                val selected = state == currentState
-                val transition = updateTransition(selected, label = "tab transition")
-
-                val backgroundColor by transition.animateColor(
-                    label = "background color",
-                    transitionSpec = { tween(300) }
-                ) { isSelected ->
-                    if (isSelected) Color(0xFF5D5FEF) else Color.Transparent
-                }
-
-                val textColor by transition.animateColor(
-                    label = "text color",
-                    transitionSpec = { tween(300) }
-                ) { isSelected ->
-                    if (isSelected) Color.White else Color.White.copy(alpha = 0.6f)
-                }
-
-                val scale by transition.animateFloat(
-                    label = "scale",
-                    transitionSpec = { spring(stiffness = Spring.StiffnessLow) }
-                ) { isSelected ->
-                    if (isSelected) 1.1f else 1f
-                }
-
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(backgroundColor)
-                        .clickable { onStateChanged(state) }
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .graphicsLayer {
-                            scaleX = scale
-                            scaleY = scale
-                        }
-                ) {
-                    Text(
-                        text = state.name.lowercase().replaceFirstChar { it.uppercase() },
-                        color = textColor,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                        fontSize = 16.sp
-                    )
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalAnimationApi::class)
-@Composable
-fun EnhancedCountAnimation(
-    count: Int,
-    onIncrement: () -> Unit,
-    onDecrement: () -> Unit
-) {
-    val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-    val scale by infiniteTransition.animateFloat(
-        initialValue = 1f,
-        targetValue = 1.1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "button pulse"
-    )
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(24.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Text(
-            text = "Counter Animation",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            textAlign = TextAlign.Center
-        )
-
-        // Counter digits with individual animations
-        Box(
-            modifier = Modifier
-                .size(140.dp)
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            Color(0xFF6F3CE9),
-                            Color(0xFF33C9FF)
-                        )
-                    ),
-                    shape = CircleShape
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            AnimatedContent(
-                targetState = count,
-                transitionSpec = {
-                    val direction = if (targetState > initialState) {
-                        // Count increasing
-                        (slideIn(initialOffset = { IntOffset(0, it.height) }) + fadeIn()) with
-                                (slideOut(targetOffset = { IntOffset(0, -it.height) }) + fadeOut())
-                    } else {
-                        // Count decreasing
-                        (slideIn(initialOffset = { IntOffset(0, -it.height) }) + fadeIn()) with
-                                (slideOut(targetOffset = { IntOffset(0, it.height) }) + fadeOut())
-                    }
-                    direction.using(SizeTransform(clip = false))
-                },
-                label = "digit animation"
-            ) { targetCount ->
-                Text(
-                    text = "$targetCount",
-                    fontSize = 48.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color.White
-                )
-            }
-        }
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Decrement button with fixed functionality
-            FloatingActionButton(
-                onClick = onDecrement,
-                containerColor = Color(0xFF5D5FEF),
-                contentColor = Color.White,
-                modifier = Modifier.size(48.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = "Decrement",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
-            // Increment button
-            FloatingActionButton(
-                onClick = onIncrement,
-                containerColor = Color(0xFF5D5FEF),
-                contentColor = Color.White,
-                modifier = Modifier
-                    .scale(scale)
-                    .size(56.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowUp,
-                    contentDescription = "Increment",
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-        }
-    }
-}
 
 @Composable
 fun EnhancedExpandAnimation(expanded: Boolean, onToggle: () -> Unit) {
+    // Column to hold the expansion elements
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalAlignment = Alignment.CenterHorizontally, // Center items horizontally
+        verticalArrangement = Arrangement.spacedBy(16.dp) // Add space between items
     ) {
+        // Title text
         Text(
             text = "Expansion Animation",
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Center // Center the text
         )
 
+        // Create an infinite transition for the glow effect
         val infiniteTransition = rememberInfiniteTransition(label = "glow")
+
+        // Animate the alpha value for the glow effect
         val glowAlpha by infiniteTransition.animateFloat(
             initialValue = 0.2f,
             targetValue = 0.7f,
             animationSpec = infiniteRepeatable(
-                animation = tween(1500),
-                repeatMode = RepeatMode.Reverse
+                animation = tween(1500), // Animation duration of 1.5 seconds
+                repeatMode = RepeatMode.Reverse // Reverse the animation after each iteration
             ),
             label = "glow alpha"
         )
 
+        // Animate the rotation angle based on the expanded state
         val rotationAngle by animateFloatAsState(
-            targetValue = if (expanded) 360f else 0f,
+            targetValue = if (expanded) 360f else 0f, // Rotate 360 degrees if expanded, otherwise 0
             animationSpec = tween(
-                durationMillis = 1000,
-                easing = EaseInOutQuart
+                durationMillis = 1000, // Animation duration of 1 second
+                easing = EaseInOutQuart // Use an ease-in-out-quart easing function
             ),
             label = "rotation"
         )
 
+        // Box to contain the animated circle
         Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.padding(16.dp)
+            contentAlignment = Alignment.Center, // Center the content inside the box
+            modifier = Modifier.padding(16.dp) // Add padding around the box
         ) {
             // Glow effect
             Box(
                 modifier = Modifier
-                    .size(if (expanded) 220.dp else 110.dp)
+                    .size(if (expanded) 220.dp else 110.dp) // Size changes based on expanded state
                     .graphicsLayer {
-                        alpha = glowAlpha
+                        alpha = glowAlpha // Apply the glow alpha animation
                     }
                     .background(
-                        color = if (expanded) Color(0xFF00FFA3) else Color(0xFF4269E1),
-                        shape = CircleShape
+                        color = if (expanded) Color(0xFF00FFA3) else Color(0xFF4269E1), // Color changes based on expanded state
+                        shape = CircleShape // Make the background a circle
                     )
             )
 
             // Main animated circle
             Box(
                 modifier = Modifier
-                    .clip(CircleShape)
-                    .clickable { onToggle() }
-                    .size(if (expanded) 200.dp else 100.dp)
-                    .rotate(rotationAngle)
-                    .animateContentSize(
+                    .clip(CircleShape) // Clip the box to a circle shape
+                    .clickable { onToggle() } // Call the onToggle function when clicked
+                    .size(if (expanded) 200.dp else 100.dp) // Size changes based on expanded state
+                    .rotate(rotationAngle) // Apply the rotation animation
+                    .animateContentSize( // Animate the content size
                         animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMedium
+                            dampingRatio = Spring.DampingRatioMediumBouncy, // Use a bouncy damping ratio
+                            stiffness = Spring.StiffnessMedium // Use a medium stiffness
                         )
                     )
                     .background(
-                        brush = Brush.linearGradient(
+                        brush = Brush.linearGradient( // Use a linear gradient for the background
                             colors = if (expanded) {
                                 listOf(
                                     Color(0xFF00FFA3),
@@ -461,47 +298,55 @@ fun EnhancedExpandAnimation(expanded: Boolean, onToggle: () -> Unit) {
                             }
                         )
                     ),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center // Center the content inside the box
             ) {
+                // Transition for the text animation
                 val textTransition = updateTransition(expanded, label = "text animation")
+
+                // Animate the text scale based on the expanded state
                 val textScale by textTransition.animateFloat(
                     label = "text scale",
-                    transitionSpec = { spring(stiffness = Spring.StiffnessLow) }
+                    transitionSpec = { spring(stiffness = Spring.StiffnessLow) } // Use a spring animation
                 ) { isExpanded ->
-                    if (isExpanded) 1.5f else 1f
+                    if (isExpanded) 1.5f else 1f // Scale up if expanded, otherwise stay at 1
                 }
 
+                // Animate the arrow rotation based on the expanded state
                 val arrowRotation by textTransition.animateFloat(
                     label = "arrow rotation",
-                    transitionSpec = { tween(500) }
+                    transitionSpec = { tween(500) } // Use a tween animation with a duration of 500ms
                 ) { isExpanded ->
-                    if (isExpanded) 180f else 0f
+                    if (isExpanded) 180f else 0f // Rotate 180 degrees if expanded, otherwise 0
                 }
 
+                // Column to hold the text and icon
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally, // Center items horizontally
+                    verticalArrangement = Arrangement.Center, // Center items vertically
                     modifier = Modifier.graphicsLayer {
-                        scaleX = textScale
-                        scaleY = textScale
+                        scaleX = textScale // Apply the text scale animation
+                        scaleY = textScale // Apply the text scale animation
                     }
                 ) {
+                    // Text to display the state
                     Text(
-                        text = if (expanded) "Expanded" else "Tap Me",
+                        text = if (expanded) "Expanded" else "Tap Me", // Display different text based on expanded state
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize = if (expanded) 22.sp else 16.sp
+                        fontSize = if (expanded) 22.sp else 16.sp // Change font size based on expanded state
                     )
 
+                    // Add space between the text and the icon
                     Spacer(modifier = Modifier.height(4.dp))
 
+                    // Icon to indicate the toggle state
                     Icon(
-                        imageVector = Icons.Default.KeyboardArrowUp,
-                        contentDescription = "Toggle",
+                        imageVector = Icons.Default.KeyboardArrowUp, // Use an upward arrow icon
+                        contentDescription = "Toggle", // Content description for accessibility
                         tint = Color.White,
                         modifier = Modifier
-                            .size(24.dp)
-                            .rotate(arrowRotation)
+                            .size(24.dp) // Set the size of the icon
+                            .rotate(arrowRotation) // Apply the arrow rotation animation
                     )
                 }
             }
@@ -509,25 +354,39 @@ fun EnhancedExpandAnimation(expanded: Boolean, onToggle: () -> Unit) {
     }
 }
 
+
+
+
+
+
+
+
 @Composable
 fun EnhancedCrossfadeAnimation() {
+    // State to hold the current page (A or B)
     var currentPage by remember { mutableStateOf("A") }
+    // Coroutine scope for launching animations
     val scope = rememberCoroutineScope()
+    // Animatable to handle rotation animation
     val rotation = remember { Animatable(0f) }
 
+    // LaunchedEffect to trigger rotation animation when the current page changes
     LaunchedEffect(currentPage) {
-        // Rotate card when page changes
+        // Snap rotation to 0 before starting the animation
         rotation.snapTo(0f)
+        // Animate rotation to 360 degrees with a custom easing
         rotation.animateTo(
             targetValue = 360f,
             animationSpec = tween(1200, easing = EaseOutBack)
         )
     }
 
+    // Column to hold the entire content
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Title text
         Text(
             text = "Crossfade Animation",
             fontSize = 20.sp,
@@ -536,38 +395,44 @@ fun EnhancedCrossfadeAnimation() {
             textAlign = TextAlign.Center
         )
 
+        // Box to hold the rotating card
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .graphicsLayer {
+                    // Apply rotation to the Y-axis
                     rotationY = rotation.value
+                    // Adjust camera distance for 3D effect
                     cameraDistance = 12f * density
                 }
                 .size(200.dp)
         ) {
+            // Crossfade to animate between different screens
             Crossfade(
-                targetState = currentPage,
-                animationSpec = tween(800),
+                targetState = currentPage, // The state to crossfade to
+                animationSpec = tween(800), // Animation duration
                 label = "enhanced crossfade"
             ) { screen ->
+                // Card to display the content for each screen
                 Card(
                     colors = CardDefaults.cardColors(
-                        containerColor = Color.Transparent
+                        containerColor = Color.Transparent // Make the card background transparent
                     ),
                     border = BorderStroke(
                         width = 2.dp,
-                        color = if (screen == "A") Color(0xFFF43F5E) else Color(0xFF60A5FA)
+                        color = if (screen == "A") Color(0xFFF43F5E) else Color(0xFF60A5FA) // Border color changes based on the screen
                     ),
                     elevation = CardDefaults.cardElevation(6.dp),
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier
                         .size(200.dp)
                         .graphicsLayer {
-                            // Subtle continuous animation
+                            // Add a subtle wobble animation
                             val wobble = sin(rotation.value * 0.05f) * 2f
                             rotationZ = wobble
                         }
                 ) {
+                    // Box to hold the content of the card
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -588,7 +453,9 @@ fun EnhancedCrossfadeAnimation() {
                             ),
                         contentAlignment = Alignment.Center
                     ) {
+                        // Column to hold the text elements
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            // Text to display the page name
                             Text(
                                 text = "Page $screen",
                                 color = Color.White,
@@ -596,7 +463,9 @@ fun EnhancedCrossfadeAnimation() {
                                 fontWeight = FontWeight.ExtraBold
                             )
 
+                            // State to handle the animating dots
                             var animatingDots by remember { mutableStateOf(0) }
+                            // LaunchedEffect to animate the dots
                             LaunchedEffect(screen) {
                                 while (true) {
                                     animatingDots = (animatingDots + 1) % 4
@@ -604,6 +473,7 @@ fun EnhancedCrossfadeAnimation() {
                                 }
                             }
 
+                            // Text to display the animating dots
                             Text(
                                 text = "Animating" + ".".repeat(animatingDots),
                                 color = Color.White.copy(alpha = 0.8f),
@@ -617,10 +487,11 @@ fun EnhancedCrossfadeAnimation() {
 
         Spacer(modifier = Modifier.height(1.dp))
 
-        // Improved visibility for the switch button
+        // Button to switch between pages
         Button(
             onClick = {
                 scope.launch {
+                    // Toggle the current page
                     currentPage = if (currentPage == "A") "B" else "A"
                 }
             },
@@ -630,6 +501,7 @@ fun EnhancedCrossfadeAnimation() {
             elevation = ButtonDefaults.buttonElevation(8.dp),
             modifier = Modifier.width(180.dp)
         ) {
+            // Text to display the button label
             Text(
                 "Switch to Page ${if (currentPage == "A") "B" else "A"}",
                 color = Color.White,
@@ -639,6 +511,7 @@ fun EnhancedCrossfadeAnimation() {
     }
 }
 
+// Enum to define the different animation states
 enum class AnimationState {
     COUNT, EXPAND, CROSSFADE
 }

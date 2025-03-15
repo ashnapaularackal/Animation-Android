@@ -27,7 +27,7 @@ fun MainScreen(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Student information
-        Text("Student Info: Ashna Paul", style = MaterialTheme.typography.headlineMedium)
+        Text("Student Name: Ashna Paul", style = MaterialTheme.typography.headlineMedium)
         Text("Student ID: 301479554", style = MaterialTheme.typography.headlineSmall)
 
         Spacer(modifier = Modifier.height(32.dp))
